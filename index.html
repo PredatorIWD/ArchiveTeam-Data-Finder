@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArchiveTeam ZippyShare Data</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #eee;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    #container {
+      width: 100%;
+      line-height: 35px;
+      text-align: center;
+      margin-top: 110px;
+    }
+
+    #info {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background-color: #111;
+      margin: 10px;
+      text-align: center;
+    }
+
+    #info a {
+      margin-right: 20px;
+    }
+
+    #output {
+      background-color: #222;
+      font-size: 0.8em;
+      padding: 10px;
+      overflow: auto;
+      width: calc(100% - 20px);
+      max-height: 80vh;
+      margin-top: 20px;
+      align-self: flex-start;
+    }
+
+    #outputHeader {
+      position: -webkit-sticky;
+      position: sticky;
+      top: 0;
+      background-color: #111;
+    }
+
+    .highlightSearched {
+      background-color: #d3ab07;
+    }
+
+    #status {
+      margin-top: 40px;
+      color: #ffc107;
+    }
+
+    #searchInput {
+      width: 100%;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    #searchButton,
+    #loadFile {
+      margin-top: 10px;
+      padding: 8px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="info">
+    <a href='https://wiki.archiveteam.org/index.php/Zippyshare'>ArchiveTeam ZippyShare Wiki</a>
+    <a href='https://archive.org/details/ZippyShare-Compiled-Archived-Links-from-ArchiveTeam.org'>How I compiled the data</a>
+    <a href='https://github.com/PredatorIWD/Archiveteam-Data-Finder'>Webpage source code</a>
+  </div>
+  <div id="container">
+    <div id="status"></div>
+    <input style="display: none" type="text" id="searchInput" placeholder="Enter search term">
+    <button style="display: none" id="searchButton">Search</button>
+    <button id="loadFile">Load the file containing links to archived data<br>(For ZippyShare: 28MB bandwith and ~1GB RAM)</button>
+    <div style="display: none" id="output"></div>
+  </div>
+
+  <script src="pako_inflate.min.js"></script>
+  <!--Source: https://github.com/nodeca/pako/blob/master/dist/pako_inflate.min.js-->
+
+  <script>
+    const fileToLoad = "ZIPPYSHARE_LINKS_AND_IDs_MERGED.txt.gz"
+    let loadedFile, fileData, inflatedData, fileLines;
+
+    const statusDiv = document.getElementById('status');
+
+    document.getElementById('loadFile').addEventListener('click', handleFileLoading);
+    document.getElementById('searchButton').addEventListener('click', handleSearch);
+    document.getElementById('searchInput').addEventListener('keypress', event => event.key === 'Enter' ? handleSearch() : null);
+
+    async function handleFileLoading() {
+      statusDiv.textContent = 'Downloading file...';
+      loadedFile = await fetch(fileToLoad);
+      statusDiv.textContent = 'Loading...';
+      fileData = await loadedFile.arrayBuffer();
+      statusDiv.textContent = 'Inflating file...';
+      inflatedData = await pako.inflate(fileData, { to: 'string', windowBits: pako.MAX_WINDOW_BITS | 32 }); // 32 = Automatic header detection
+      statusDiv.textContent = `File ${fileToLoad} uncompressed.`;
+
+      fileLines = inflatedData.split('\n');
+      loadedFile, fileData, inflatedData = null;
+
+      document.getElementById('loadFile').style.display = "none";
+      document.getElementById('searchInput').style.display = "inline";
+      document.getElementById('searchButton').style.display = "inline";
+      document.getElementById('output').style.display = "block";
+    }
+
+    async function handleSearch() {
+      statusDiv.textContent = 'Searching...';
+
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      if (!searchTerm) return;
+
+      const matchingLines = fileLines.filter(line => line.toLowerCase().includes(searchTerm));
+
+      const outputHTML = matchingLines.map(function (line) {
+        const archiveOrg_ID = line.split('|')[2];
+        const megaWarcLink = `<a href='https://archive.org/download/archiveteam_zippyshare_${archiveOrg_ID}/zippyshare_${archiveOrg_ID}.megawarc.warc.gz'>Megawarc:${archiveOrg_ID}</a>`;
+        line = line.replace(archiveOrg_ID, megaWarcLink);
+
+        // Highlight searchTerm in output
+        line = line.replace(new RegExp(searchTerm, 'gi'), (matchedString) => `<span class='highlightSearched'>${matchedString}</span>`);
+
+        return `<div>${line}</div>`
+      }).join('');
+
+      document.getElementById('output').innerHTML = `<div id='outputHeader'>Header: URL|decodeURI(URL)|Download link to the ~10GB megawarc.warc.gz containing the archived file</div>\n${outputHTML}`;
+      statusDiv.textContent = `Search complete, ${matchingLines.length} results found!`;
+    }
+  </script>
+</body>
+
+</html>

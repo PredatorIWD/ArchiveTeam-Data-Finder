@@ -68,7 +68,7 @@
       margin: 0 auto;
     }
 
-    /* Dashboard Area */
+    /* Dashboard */
     #dashboard {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -81,7 +81,6 @@
     }
 
     #status {
-      /* Font same as body now */
       font-size: 1.1rem;
       margin-bottom: 15px;
       color: var(--text-main);
@@ -229,8 +228,11 @@
     // Create a searchable index of even the MD5/SHA256 hashes of all archived files
 
     // CONFIG
-    const BASE_PATH = "data/zippyshare/zippyshare.com.txt.gz.";
     const DISPLAY_LIMIT = 1000;
+    const BASE_PATH = "data/zippyshare/zippyshare.com.txt.gz.";
+    const TOTAL_PARTS = {
+      "zippyshare.com": 73
+    };
 
     // STATE
     let mode = 'desktop';
@@ -279,7 +281,7 @@
         let part = 1;
         while (true) {
           const url = BASE_PATH + String(part).padStart(3, '0');
-          ui.status.textContent = `Downloading part ${part}...`;
+          ui.status.textContent = `Downloading part ${part}/${TOTAL_PARTS["zippyshare.com"]}...`;
 
           const res = await fetch(url);
           if (!res.ok) {
@@ -420,7 +422,7 @@
 
           if (Date.now() - lastUpd > 100) {
             if (mode === 'mobile') {
-              ui.status.textContent = `Scanning Part ${currentPartIndex}... Found ${count} matches`;
+              ui.status.textContent = `Scanning Part ${currentPartIndex}/${TOTAL_PARTS["zippyshare.com"]}... Found ${count} matches`;
             } else {
               ui.status.textContent = `Scanning... Found ${count} matches`;
             }

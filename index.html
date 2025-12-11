@@ -4,152 +4,508 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ArchiveTeam ZippyShare Data</title>
+  <title>ArchiveTeam Data Finder</title>
   <style>
+    :root {
+      --bg: #121212;
+      --surface: #1e1e1e;
+      --border: #333;
+      --text-main: #e0e0e0;
+      --text-dim: #a0a0a0;
+      --btn-bg: #2a2a2a;
+      --btn-hover: #3a3a3a;
+      --highlight-bg: #555;
+      --radius: 8px;
+    }
+
     body {
-      background-color: #111;
-      color: #eee;
-      font-family: Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       height: 100vh;
-      margin: 0;
     }
 
+    a {
+      color: #fff;
+      text-decoration-color: #555;
+    }
+
+    .row a {
+      color: #007bff;
+      text-decoration-color: #007bff;
+    }
+
+    a:hover {
+      text-decoration-color: #fff;
+    }
+
+    /* Header */
+    #top-bar {
+      width: 100%;
+      padding: 8px 0;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      flex-shrink: 0;
+    }
+
+    /* Main Container */
     #container {
       width: 100%;
-      line-height: 35px;
-      text-align: center;
-      margin-top: 110px;
+      max-width: 1920px;
+      box-sizing: border-box;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      overflow: hidden;
+      margin: 0 auto;
     }
 
-    #info {
-      position: fixed;
-      top: 0;
+    /* Dashboard Area */
+    #dashboard {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 15px;
       width: 100%;
-      background-color: #111;
-      margin: 10px;
-      text-align: center;
-    }
-
-    #info a {
-      margin-right: 20px;
-    }
-
-    #output {
-      background-color: #222;
-      font-size: 0.8em;
-      padding: 10px;
-      overflow: auto;
-      width: calc(100% - 20px);
-      max-height: 80vh;
-      margin-top: 20px;
-      align-self: flex-start;
-    }
-
-    #outputHeader {
-      position: -webkit-sticky;
-      position: sticky;
-      top: 0;
-      background-color: #111;
-    }
-
-    .highlightSearched {
-      background-color: #d3ab07;
+      box-sizing: border-box;
     }
 
     #status {
-      margin-top: 40px;
-      color: #ffc107;
+      /* Font same as body now */
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+      color: var(--text-main);
+      min-height: 1.2em;
+      word-wrap: break-word;
     }
 
-    #searchInput {
+    /* Controls */
+    #controls {
+      display: none;
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    input[type="text"] {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: #fff;
+      padding: 12px;
+      font-size: 1rem;
       width: 100%;
       box-sizing: border-box;
       text-align: center;
+      margin-bottom: 10px;
     }
 
-    #searchButton,
-    #loadFile {
-      margin-top: 10px;
-      padding: 8px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
+    /* Buttons */
+    button {
+      background: var(--btn-bg);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 24px;
       cursor: pointer;
+      font-size: 0.95rem;
+      margin: 5px;
+      transition: background 0.2s;
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--btn-hover);
+    }
+
+    button:disabled {
+      color: #555;
+      cursor: default;
+    }
+
+    .btn-small {
+      font-size: 0.85rem;
+      padding: 6px 12px;
+      margin-top: 5px;
+    }
+
+    #mode-switch {
+      margin-top: 15px;
+    }
+
+    /* Results */
+    #output {
+      flex-grow: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow-y: auto;
+      position: relative;
+      display: none;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .header-row {
+      position: sticky;
+      top: 0;
+      background: #252525;
+      border-bottom: 1px solid #555;
+      font-weight: bold;
+      padding: 10px;
+      z-index: 2;
+    }
+
+    .row {
+      border-bottom: 1px solid var(--border);
+      padding: 8px 10px;
+      font-size: 0.9rem;
+      word-break: break-all;
+    }
+
+    .highlight {
+      background-color: var(--highlight-bg);
+      color: #fff;
+      font-weight: bold;
     }
   </style>
 </head>
 
 <body>
-  <div id="info">
-    <a href='https://wiki.archiveteam.org/index.php/Zippyshare'>ArchiveTeam ZippyShare Wiki</a>
-    <a href='https://archive.org/details/ZippyShare-Compiled-Archived-Links-from-ArchiveTeam.org'>How I compiled the data</a>
-    <a href='https://github.com/PredatorIWD/Archiveteam-Data-Finder'>Webpage source code</a>
-  </div>
-  <div id="container">
-    <div id="status"></div>
-    <input style="display: none" type="text" id="searchInput" placeholder="Enter search term">
-    <button style="display: none" id="searchButton">Search</button>
-    <button id="loadFile">Load the file containing links to archived data<br>(For ZippyShare: 28MB bandwith and ~1GB RAM)</button>
-    <div style="display: none" id="output"></div>
+
+  <div id="top-bar">
+    <a href="https://wiki.archiveteam.org/index.php/Zippyshare" target="_blank">ArchiveTeam Wiki</a> &nbsp;|&nbsp;
+    <a href="https://archive.org/details/ZippyShare-Compiled-Archived-Links-from-ArchiveTeam.org" target="_blank">Data
+      Source</a> &nbsp;|&nbsp;
+    <a href="https://github.com/PredatorIWD/Archiveteam-Data-Finder" target="_blank">Page Source Code</a>
   </div>
 
-  <script src="pako_inflate.min.js"></script>
-  <!--Source: https://github.com/nodeca/pako/blob/master/dist/pako_inflate.min.js-->
+  <div id="container">
+    <div id="dashboard">
+      <div id="status">...</div>
+
+      <!-- Loader -->
+      <div id="load-ui">
+        <button id="btn-load">Load ZippyShare Data (28MB)</button>
+
+        <div id="mode-switch">
+          <button id="btn-low-ram" class="btn-small">Switch to Very Low RAM Mode</button>
+        </div>
+      </div>
+
+      <!-- Search UI -->
+      <div id="controls">
+        <input type="text" id="inp-search" placeholder="Enter search term">
+
+        <div>
+          <button id="btn-search">Search</button>
+          <label style="color:#aaa; font-size:0.9rem; margin-left:15px; cursor:pointer;">
+            <input type="checkbox" id="chk-regex"> Regex
+          </label>
+          <button id="btn-stop" style="display:none;">Stop</button>
+          <button id="btn-export" style="display:none;">Export Results</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="output"></div>
+  </div>
 
   <script>
-    const fileToLoad = "ZIPPYSHARE_LINKS_AND_IDs_MERGED.txt.gz"
-    let loadedFile, fileData, inflatedData, fileLines;
+    // Project TODO:
+    // Support more sites
+    // Custom archived data index format saved without reduntant strings that get added only while searching in order to save on bandwidth
+    // Pass search term in URL to execute it automatically
+    // Split export download into multiple files in case of OOM errors
+    // Create a searchable index of even the files within the archived zip/7z/rar/... files, make it a checkbox on by default
+    // Create a searchable index of even the MD5/SHA256 hashes of all archived files
 
-    const statusDiv = document.getElementById('status');
+    // CONFIG
+    const BASE_PATH = "data/zippyshare/zippyshare.com.txt.gz.";
+    const DISPLAY_LIMIT = 1000;
 
-    document.getElementById('loadFile').addEventListener('click', handleFileLoading);
-    document.getElementById('searchButton').addEventListener('click', handleSearch);
-    document.getElementById('searchInput').addEventListener('keypress', event => event.key === 'Enter' ? handleSearch() : null);
+    // STATE
+    let mode = 'desktop';
+    let memoryBlob = null;
+    let abortCtrl = null;
+    let isBusy = false;
+    let allMatches = [];
+    let currentPartIndex = 0;
 
-    async function handleFileLoading() {
-      statusDiv.textContent = 'Downloading file...';
-      loadedFile = await fetch(fileToLoad);
-      statusDiv.textContent = 'Loading...';
-      fileData = await loadedFile.arrayBuffer();
-      statusDiv.textContent = 'Inflating file...';
-      inflatedData = await pako.inflate(fileData, { to: 'string', windowBits: pako.MAX_WINDOW_BITS | 32 }); // 32 = Automatic header detection
-      statusDiv.textContent = `File ${fileToLoad} uncompressed.`;
+    // ELEMENTS
+    const ui = {
+      status: document.getElementById('status'),
+      loadUI: document.getElementById('load-ui'),
+      controls: document.getElementById('controls'),
+      output: document.getElementById('output'),
+      inpSearch: document.getElementById('inp-search'),
+      btnLoad: document.getElementById('btn-load'),
+      btnLowRam: document.getElementById('btn-low-ram'),
+      btnSearch: document.getElementById('btn-search'),
+      btnStop: document.getElementById('btn-stop'),
+      btnExport: document.getElementById('btn-export'),
+      chkRegex: document.getElementById('chk-regex')
+    };
 
-      fileLines = inflatedData.split('\n');
-      loadedFile, fileData, inflatedData = null;
+    // EVENTS
+    ui.btnLoad.addEventListener('click', () => loadData());
+    ui.btnLowRam.addEventListener('click', () => {
+      mode = 'mobile';
+      ui.loadUI.style.display = 'none';
+      ui.controls.style.display = 'block';
+      ui.status.textContent = "Very Low RAM Mode (redownloads all data for each search)";
+      ui.inpSearch.focus();
+    });
+    ui.btnSearch.addEventListener('click', startSearch);
+    ui.btnStop.addEventListener('click', () => { if (abortCtrl) abortCtrl.abort(); });
+    ui.btnExport.addEventListener('click', exportData);
+    ui.inpSearch.addEventListener('keypress', e => { if (e.key === 'Enter') startSearch(); });
 
-      document.getElementById('loadFile').style.display = "none";
-      document.getElementById('searchInput').style.display = "inline";
-      document.getElementById('searchButton').style.display = "inline";
-      document.getElementById('output').style.display = "block";
+    // LOAD LOGIC
+    async function loadData() {
+      if (!window.DecompressionStream) return alert("Browser is too old.");
+      ui.btnLoad.disabled = true;
+
+      try {
+        const chunks = [];
+        let part = 1;
+        while (true) {
+          const url = BASE_PATH + String(part).padStart(3, '0');
+          ui.status.textContent = `Downloading part ${part}...`;
+
+          const res = await fetch(url);
+          if (!res.ok) {
+            if (part === 1) throw new Error("No files found.");
+            break;
+          }
+          chunks.push(await res.blob());
+          part++;
+        }
+        memoryBlob = new Blob(chunks);
+        const sizeMB = (memoryBlob.size / 1024 / 1024).toFixed(1);
+        ui.status.textContent = `Loaded ${chunks.length} parts (${sizeMB} MB). Ready.`;
+        ui.loadUI.style.display = 'none';
+        ui.controls.style.display = 'block';
+        ui.inpSearch.focus();
+      } catch (err) {
+        console.error(err);
+        ui.status.textContent = `Error: ${err.message}`;
+        ui.btnLoad.disabled = false;
+      }
     }
 
-    async function handleSearch() {
-      statusDiv.textContent = 'Searching...';
+    // SEARCH LOGIC
+    async function startSearch() {
+      if (isBusy) return;
+      const term = ui.inpSearch.value.trim();
+      if (!term) return ui.status.textContent = "Enter search term";
 
-      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-      if (!searchTerm) return;
+      let regex = null;
+      if (ui.chkRegex.checked) {
+        try { regex = new RegExp(term, 'i'); }
+        catch { return ui.status.textContent = "Invalid Regex"; }
+      }
 
-      const matchingLines = fileLines.filter(line => line.toLowerCase().includes(searchTerm));
+      ui.output.innerHTML = "<div class='header-row'>Original URL | Decoded URL | Archive Download Link</div>";
+      ui.output.style.display = 'block';
+      ui.btnSearch.style.display = 'none';
+      ui.btnStop.style.display = 'inline-block';
+      ui.btnExport.style.display = 'none';
 
-      const outputHTML = matchingLines.map(function (line) {
-        const archiveOrg_ID = line.split('|')[2];
-        const megaWarcLink = `<a href='https://archive.org/download/archiveteam_zippyshare_${archiveOrg_ID}/zippyshare_${archiveOrg_ID}.megawarc.warc.gz'>Megawarc:${archiveOrg_ID}</a>`;
-        line = line.replace(archiveOrg_ID, megaWarcLink);
+      allMatches = [];
+      currentPartIndex = 0;
+      isBusy = true;
+      abortCtrl = new AbortController();
 
-        // Highlight searchTerm in output
-        line = line.replace(new RegExp(searchTerm, 'gi'), (matchedString) => `<span class='highlightSearched'>${matchedString}</span>`);
+      try {
+        let stream;
+        if (mode === 'desktop') {
+          ui.status.textContent = "Scanning...";
+          stream = memoryBlob.stream();
+        } else {
+          ui.status.textContent = "Downloading...";
+          stream = createNetStream(abortCtrl.signal);
+        }
 
-        return `<div>${line}</div>`
-      }).join('');
+        const count = await processStream(stream, term, regex, abortCtrl.signal);
 
-      document.getElementById('output').innerHTML = `<div id='outputHeader'>Header: URL|decodeURI(URL)|Download link to the ~10GB megawarc.warc.gz containing the archived file</div>\n${outputHTML}`;
-      statusDiv.textContent = `Search complete, ${matchingLines.length} results found!`;
+        let msg = `Done. Found ${count} results.`;
+        if (count > DISPLAY_LIMIT) {
+          msg += ` (Showing first ${DISPLAY_LIMIT})`;
+        }
+        ui.status.textContent = msg;
+
+      } catch (err) {
+        if (err.name === 'AbortError') ui.status.textContent = `Stopped. Found ${allMatches.length}.`;
+        else ui.status.textContent = "Error: " + err.message;
+      } finally {
+        isBusy = false;
+        ui.btnSearch.style.display = 'inline-block';
+        ui.btnStop.style.display = 'none';
+        if (allMatches.length) ui.btnExport.style.display = 'inline-block';
+      }
+    }
+
+    // NET STREAM
+    function createNetStream(signal) {
+      let part = 1;
+      let reader = null;
+
+      return new ReadableStream({
+        async pull(controller) {
+          if (signal.aborted) {
+            if (reader) await reader.cancel();
+            return controller.close();
+          }
+          try {
+            if (!reader) {
+              const url = BASE_PATH + String(part).padStart(3, '0');
+              currentPartIndex = part;
+              const res = await fetch(url, { signal });
+              if (!res.ok) return controller.close();
+              reader = res.body.getReader();
+              part++;
+            }
+            const { done, value } = await reader.read();
+            if (done) {
+              reader = null;
+              return this.pull(controller);
+            }
+            controller.enqueue(value);
+          } catch (err) { controller.error(err); }
+        },
+        cancel() { if (reader) reader.cancel(); }
+      });
+    }
+
+    // PROCESS
+    async function processStream(rawStream, term, regex, signal) {
+      const stream = rawStream
+        .pipeThrough(new DecompressionStream('gzip'))
+        .pipeThrough(new TextDecoderStream());
+
+      const reader = stream.getReader();
+      let leftover = '';
+      let count = 0;
+      let lastUpd = Date.now();
+      const lowerTerm = term.toLowerCase();
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const lines = (leftover + value).split('\n');
+          leftover = lines.pop();
+
+          for (const line of lines) {
+            let match = false;
+            if (regex) match = regex.test(line);
+            else if (line.toLowerCase().includes(lowerTerm)) match = true;
+
+            if (match) {
+              count++;
+              allMatches.push(line);
+              if (count <= DISPLAY_LIMIT) renderRow(line, term, regex);
+            }
+          }
+
+          if (Date.now() - lastUpd > 100) {
+            if (mode === 'mobile') {
+              ui.status.textContent = `Scanning Part ${currentPartIndex}... Found ${count} matches`;
+            } else {
+              ui.status.textContent = `Scanning... Found ${count} matches`;
+            }
+            lastUpd = Date.now();
+          }
+        }
+
+        if (leftover) {
+          let match = false;
+          if (regex) match = regex.test(leftover);
+          else if (leftover.toLowerCase().includes(lowerTerm)) match = true;
+          if (match) {
+            count++;
+            allMatches.push(leftover);
+            if (count <= DISPLAY_LIMIT) renderRow(leftover, term, regex);
+          }
+        }
+      } finally { reader.releaseLock(); }
+      return count;
+    }
+
+    function renderRow(line, term, regex) {
+      const p = line.split('|');
+      if (p.length < 3) return;
+      const id = p[2].trim();
+      const link = `<a href="https://archive.org/download/archiveteam_zippyshare_${id}/zippyshare_${id}.megawarc.warc.gz" target="_blank">Megawarc:${id}</a>`;
+      let html = line.replace(id, link);
+
+      if (term) {
+        try {
+          let flags = 'gi';
+          let source = term;
+
+          if (regex) {
+            flags = regex.flags + (regex.flags.includes('g') ? '' : 'g');
+            source = regex.source;
+          } else {
+            source = `(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`;
+          }
+
+          const pat = new RegExp(source, flags);
+          html = html.replace(pat, "<span class='highlight'>$&</span>");
+        } catch (e) { }
+      }
+
+      const div = document.createElement('div');
+      div.className = 'row';
+      div.innerHTML = html;
+      ui.output.appendChild(div);
+    }
+
+    // EXPORT
+    function exportData() {
+      if (!allMatches.length) return;
+
+      try {
+        const rows = allMatches.map(l => {
+          const p = l.split('|');
+          if (p.length < 3) return l;
+          const url = `https://archive.org/download/archiveteam_zippyshare_${p[2].trim()}/zippyshare_${p[2].trim()}.megawarc.warc.gz`;
+          return `${p[0]}|${p[1]}|${url}`;
+        });
+
+        const blob = new Blob(["URL|Decoded|Link\n", ...rows.map(r => r + '\n')], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `results-${Date.now()}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error(err);
+        showMemoryError(err.message);
+      }
+    }
+
+    function showMemoryError(details) {
+      const fallbackLink = "https://archive.org/download/ZippyShare-Compiled-Archived-Links-from-ArchiveTeam.org/ZIPPYSHARE_LINKS_AND_IDs_MERGED.7z";
+      ui.status.innerHTML = `
+                <span style="color:#ff6666">Error: Uncaught out of memory (${details}).</span><br>
+                The dataset is too large to export in this browser.<br>
+                <a href="${fallbackLink}" target="_blank" style="color:#fff; font-weight:bold; text-decoration:underline;">Click here to download the full dataset (7z)</a>
+            `;
     }
   </script>
 </body>
